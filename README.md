@@ -8,11 +8,17 @@ This guide explains how to set up a Kubernetes cluster on **Ubuntu 24.04 LTS**, 
 It includes the required system setup, network configuration, and role-specific commands for **Master** and **Worker** nodes.
 
 
-## Commands for *ALL Nodes* (Master and Workers)
+## Table of Contents
 
-These commands must be run on **every node** (master and workers):
+- [Step 1: System Configuration (All Nodes)](#step-1-system-configuration-all-nodes)
+- [Step 2: Install containerd (All Nodes)](#step-2-install-containerd-all-nodes)
+- [Step 3: Install Kubernetes Components (All Nodes)](#step-3-install-kubernetes-components-all-nodes)
+- [Step 4: Initialize the Master Node (MASTER ONLY)](#step-4-initialize-the-master-node-master-only)
+- [Step 5: Join Worker Nodes (WORKERS ONLY)](#step-5-join-worker-nodes-workers-only)
+- [Step 6: Verify Your Cluster](#step-6-verify-your-cluster)
+- [Step 7: (Optional) Visualize Your Cluster with Lens](#step-7-optional-visualize-your-cluster-with-lens)
 
-### 1. Kernel and System Configurations
+## Step 1: System Configuration (All Nodes)
 
 To enable required networking and resource management:
 
@@ -40,7 +46,7 @@ EOF
 sudo sysctl --system
 ```
 
-### 2. Install containerd
+## Step 2: Install containerd (All Nodes)
 We use containerd as the container runtime, recommended by Kubernetes.
 
 
@@ -57,7 +63,7 @@ sudo systemctl restart containerd
 sudo systemctl enable containerd
 ```
 
-### 3. Install Kubernetes Components
+## Step 3: Install Kubernetes Components (All Nodes)
 Add the official Kubernetes package repository:
 
 
@@ -74,78 +80,65 @@ sudo apt install -y kubelet kubeadm
 sudo apt install -y kubectl  # ONLY FOR MASTER
 ```
 
-## Master Node Setup
+## Step 4: Initialize the Master Node (MASTER ONLY)
 Run the following steps only on the master node.
 
-### 1. Initialize the Cluster
+1. Initialize the Cluster
 We’ll use Flannel as the network plugin, so specify its CIDR:
 ```bash
 sudo kubeadm init --pod-network-cidr=10.244.0.0/16
 ```
 Save the kubeadm join command shown at the end — you’ll need it for the workers.
 
-### 2. Configure kubectl for Your User
+2. Configure kubectl for Your User
 ```bash
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 ```
-### 3. Install Flannel CNI
+3. Install Flannel CNI
 This allows pods to communicate within the cluster:
 ```bash
 kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
 ```
 
-### 4. (Optional) Allow Scheduling on Master
+4. (Optional) Allow Scheduling on Master
 Useful for single-node clusters:
 ```bash
 kubectl taint nodes --all node-role.kubernetes.io/control-plane-
 ```
 
-## Worker Node Setup
-Run these commands on each worker node to join the cluster, after installing containerd and kubeadm:
-
-### 1. Join the Cluster
-Use the kubeadm join command that was displayed on the master after initialization. It looks like:
+## Step 5: Join Worker Nodes (WORKERS ONLY)
+Run this command on each **worker node** to join the cluster:
 ```bash
 # Join the cluster using the command provided by `kubeadm init`
 sudo kubeadm join <MASTER_IP>:6443 --token <TOKEN> --discovery-token-ca-cert-hash sha256:<HASH>
 ```
 Replace <MASTER_IP>, <TOKEN>, and <HASH> with actual values.
 
-<div align="center">
-    <img src="join.png" alt="Join">
-</div>
+## Step 6: Verify Your Cluster
+Run these commands on the master node to check that everything is working:
 
-Test the cluster on the Matser node : 
 ```bash
 kubectl get nodes
-
-<div align="center">
-    <img src="1_IconsAll_Hori.png" alt="AIDY-F2N">
-</div>
-```
-
-```bash
 kubectl get pods -A
 ```
 
 <div align="center">
-    <img src="1_IconsAll_Hori.png" alt="AIDY-F2N">
+    <img src="cli.png" alt="CLI">
 </div>
 
-## (Optional) Visualize Your Cluster with Lens
-Once your cluster is ready, use Lens — a powerful Kubernetes IDE — to manage it visually instaed of using the CLI by kubectl.
+## Step 7: (Optional) Visualize Your Cluster with Lens
+Once your cluster is ready, use Lens — a powerful Kubernetes IDE — to manage your cluster visually instead of using `kubectl` in the CLI.
 
-Steps:
-1- Download Lens: https://k8slens.dev/download
-2- Launch the app.
-3- It will automatically detect your kubeconfig file (~/.kube/config).
-4- Click “Add Cluster” and select your cluster.
-5- You're ready to view workloads, logs, nodes, and much more.
+1. **Download Lens**: [https://k8slens.dev/download](https://k8slens.dev/download)  
+2. **Launch the application.**  
+3. Lens will automatically detect your kubeconfig file (`~/.kube/config`).  
+4. Click **“Add Cluster”** and select your cluster from the list.  
+5. You're ready to view **workloads, logs, nodes, CPU/memory usage**, and much more — all in a visual interface.
 
 <div align="center">
-    <img src="lens.png" alt="Lens">
+    <img src="gui.png" alt="Lens">
 </div>
 
 
